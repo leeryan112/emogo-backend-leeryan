@@ -37,6 +37,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# =====================================================
+#   Debug route (test MongoDB connection)
+# =====================================================
+@app.get("/export-debug")
+async def export_debug():
+    vlogs = await app.mongodb["vlogs"].find().to_list(5)
+    sentiments = await app.mongodb["sentiments"].find().to_list(5)
+    gps = await app.mongodb["gps"].find().to_list(5)
+    return {
+        "vlogs": vlogs,
+        "sentiments": sentiments,
+        "gps": gps,
+    }
 
 # =====================================================
 #   Data Models
