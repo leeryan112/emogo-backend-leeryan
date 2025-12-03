@@ -9,11 +9,10 @@ import os
 
 app = FastAPI()
 
-
 # =====================================================
 #   MongoDB (Motor) Connection - ASYNC
 # =====================================================
-MONGODB_URI = os.getenv("MONGODB_URI")  # Render 中設定
+MONGODB_URI = os.getenv("MONGODB_URI")  # 在 Render 中設定
 DB_NAME = "emogo"
 
 @app.on_event("startup")
@@ -25,7 +24,6 @@ async def startup_db_client():
 async def shutdown_db_client():
     app.mongodb_client.close()
 
-
 # =====================================================
 #   CORS（前端 fetch 必須）
 # =====================================================
@@ -36,20 +34,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# =====================================================
-#   Debug route (test MongoDB connection)
-# =====================================================
-@app.get("/export-debug")
-async def export_debug():
-    vlogs = await app.mongodb["vlogs"].find().to_list(5)
-    sentiments = await app.mongodb["sentiments"].find().to_list(5)
-    gps = await app.mongodb["gps"].find().to_list(5)
-    return {
-        "vlogs": vlogs,
-        "sentiments": sentiments,
-        "gps": gps,
-    }
 
 # =====================================================
 #   Data Models
@@ -70,7 +54,6 @@ class GPS(BaseModel):
     lng: float
     timestamp: float
 
-
 # =====================================================
 #   POST endpoints (Async)
 # =====================================================
@@ -81,14 +64,12 @@ async def upload_vlog(data: Vlog):
     await app.mongodb["vlogs"].insert_one(record)
     return {"status": "ok", "stored": record}
 
-
 @app.post("/sentiments")
 async def upload_sentiment(data: Sentiment):
     record = data.dict()
     record["server_received_at"] = datetime.utcnow()
     await app.mongodb["sentiments"].insert_one(record)
     return {"status": "ok", "stored": record}
-
 
 @app.post("/gps")
 async def upload_gps(data: GPS):
@@ -97,7 +78,6 @@ async def upload_gps(data: GPS):
     await app.mongodb["gps"].insert_one(record)
     return {"status": "ok", "stored": record}
 
-
 # =====================================================
 #   Export HTML Page
 # =====================================================
@@ -105,7 +85,6 @@ templates = Jinja2Templates(directory="templates")
 
 @app.get("/export", response_class=HTMLResponse)
 async def export_dashboard(request: Request):
-
     vlogs = await app.mongodb["vlogs"].find().to_list(None)
     sentiments = await app.mongodb["sentiments"].find().to_list(None)
     gps = await app.mongodb["gps"].find().to_list(None)
@@ -120,6 +99,19 @@ async def export_dashboard(request: Request):
         }
     )
 
+# =====================================================
+#   Debug route (test MongoDB connection)
+# =====================================================
+@app.get("/export-debug")
+async def export_debug():
+    vlogs = await app.mongodb["vlogs"].find().to_list(5)
+    sentiments = await app.mongodb["sentiments"].find().to_list(5)
+    gps = await app.mongodb["gps"].find().to_list(5)
+    return {
+        "vlogs": vlogs,
+        "sentiments": sentiments,
+        "gps": gps,
+    }
 
 # =====================================================
 #   Test Root
