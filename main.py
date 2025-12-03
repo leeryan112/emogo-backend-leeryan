@@ -104,13 +104,23 @@ async def export_dashboard(request: Request):
 # =====================================================
 @app.get("/export-debug")
 async def export_debug():
-    vlogs = await app.mongodb["vlogs"].find().to_list(5)
-    sentiments = await app.mongodb["sentiments"].find().to_list(5)
-    gps = await app.mongodb["gps"].find().to_list(5)
+    vlogs_raw = await app.mongodb["vlogs"].find().to_list(5)
+    sentiments_raw = await app.mongodb["sentiments"].find().to_list(5)
+    gps_raw = await app.mongodb["gps"].find().to_list(5)
+
+    def convert_id(docs):
+        out = []
+        for d in docs:
+            d = dict(d)
+            if "_id" in d:
+                d["_id"] = str(d["_id"])
+            out.append(d)
+        return out
+
     return {
-        "vlogs": vlogs,
-        "sentiments": sentiments,
-        "gps": gps,
+        "vlogs": convert_id(vlogs_raw),
+        "sentiments": convert_id(sentiments_raw),
+        "gps": convert_id(gps_raw),
     }
 
 # =====================================================
