@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>EmoGo Export Dashboard</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        table { border-collapse: collapse; margin-bottom: 40px; width: 100%; }
+        th, td { border: 1px solid #ccc; padding: 8px; }
+        th { background: #eee; }
+    </style>
+</head>
+<body>
+    <h1>EmoGo Data Export</h1>
+
+    <h2>📹 Vlogs</h2>
+    <table>
+        <tr><th>User</th><th>Video URL</th><th>Timestamp</th></tr>
+        {% for item in vlogs %}
+        <tr>
+            <td>{{ item.user_id }}</td>
+            <td>{{ item.video_url }}</td>
+            <td>{{ item.timestamp }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>📝 Sentiments</h2>
+    <table>
+        <tr><th>User</th><th>Text</th><th>Timestamp</th></tr>
+        {% for item in sentiments %}
+        <tr>
+            <td>{{ item.user_id }}</td>
+            <td>{{ item.text }}</td>
+            <td>{{ item.timestamp }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>📍 GPS</h2>
+    <table>
+        <tr><th>User</th><th>Lat</th><th>Lng</th><th>Timestamp</th></tr>
+        {% for item in gps %}
+        <tr>
+            <td>{{ item.user_id }}</td>
+            <td>{{ item.lat }}</td>
+            <td>{{ item.lng }}</td>
+            <td>{{ item.timestamp }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+</body>
+</html>
