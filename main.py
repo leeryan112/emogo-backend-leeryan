@@ -1,10 +1,18 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi import (
+    FastAPI,
+    Request,
+    UploadFile,
+    File,
+    Form,
+    HTTPException,
+)
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorClient
+from pathlib import Path
 import os
 
 app = FastAPI()
@@ -36,13 +44,8 @@ app.add_middleware(
 )
 
 # =====================================================
-#   Data Models
+#   Data Models（sentiments / gps 還是用 JSON）
 # =====================================================
-class Vlog(BaseModel):
-    user_id: str
-    video_url: str
-    timestamp: float
-
 class Sentiment(BaseModel):
     user_id: str
     text: str
@@ -55,15 +58,53 @@ class GPS(BaseModel):
     timestamp: float
 
 # =====================================================
-#   POST endpoints (Async)
+#   上傳目錄設定（本地 uploads/ 資料夾）
+# =====================================================
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)
+
+# =====================================================
+#   POST /vlogs 影片上傳（multipart/form-data）
 # =====================================================
 @app.post("/vlogs")
-async def upload_vlog(data: Vlog):
-    record = data.dict()
-    record["server_received_at"] = datetime.utcnow()
+async def upload_vlog(
+    user_id: str = Form(...),
+    timestamp: float = Form(...),
+    file: UploadFile = File(...),
+):
+    # 產生比較不會撞名的檔名
+    safe_name = f"{int(datetime.utcnow().timestamp())}_{file.filename}"
+    file_path = UPLOAD_DIR / safe_name
+
+    # 寫檔到 uploads/
+    with file_path.open("wb") as f:
+        f.write(await file.read())
+
+    video_url = f"/video/{safe_name}"
+
+    record = {
+        "user_id": user_id,
+        "video_url": video_url,
+        "timestamp": float(timestamp),
+        "server_received_at": datetime.utcnow(),
+    }
     await app.mongodb["vlogs"].insert_one(record)
     return {"status": "ok", "stored": record}
 
+# =====================================================
+#   提供影片檔案（GET /video/{filename}）
+# =====================================================
+@app.get("/video/{filename}")
+async def get_video(filename: str):
+    file_path = UPLOAD_DIR / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    # 讓瀏覽器可以串流播放
+    return FileResponse(str(file_path))
+
+# =====================================================
+#   其它 POST endpoints (JSON)
+# =====================================================
 @app.post("/sentiments")
 async def upload_sentiment(data: Sentiment):
     record = data.dict()
@@ -124,7 +165,7 @@ async def export_debug():
     }
 
 # =====================================================
-#   Test Root
+#   Root
 # =====================================================
 @app.get("/")
 async def root():
