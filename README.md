@@ -23,6 +23,7 @@ The backend provides three POST endpoints for data collection from the EmoGo fro
 
   👉 **`https://emogo-backend-leeryan.onrender.com/export`**
 
+  TAs & Tren can open this URL in a browser to see all three types of data (vlogs, sentiments, GPS) in one HTML dashboard page and download them if needed.
 
 ---
 
